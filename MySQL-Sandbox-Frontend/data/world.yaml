@@ -1,0 +1,371 @@
+---
+schema:
+  procedures: {}
+  tables:
+    City:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - ID
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+      fields:
+        CountryCode:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: CountryCode
+          order: 3
+          size:
+            - 3
+        District:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: District
+          order: 4
+          size:
+            - 20
+        ID:
+          data_type: int
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: ID
+          order: 1
+          size:
+            - 11
+        Name:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Name
+          order: 2
+          size:
+            - 35
+        Population:
+          data_type: int
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Population
+          order: 5
+          size:
+            - 11
+      indices: []
+      name: City
+      options:
+        - ENGINE: MyISAM
+        - AUTO_INCREMENT: 4080
+        - CHARACTER SET: latin1
+      order: 1
+    Country:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - Code
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+      fields:
+        Capital:
+          data_type: int
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: Capital
+          order: 14
+          size:
+            - 11
+        Code:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: Code
+          order: 1
+          size:
+            - 3
+        Code2:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Code2
+          order: 15
+          size:
+            - 2
+        Continent:
+          data_type: enum
+          default_value: Asia
+          extra:
+            list:
+              - Asia
+              - Europe
+              - North America
+              - Africa
+              - Oceania
+              - Antarctica
+              - South America
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Continent
+          order: 3
+          size:
+            - 13
+        GNP:
+          data_type: float
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: GNP
+          order: 9
+          size:
+            - 10
+            - 2
+        GNPOld:
+          data_type: float
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: GNPOld
+          order: 10
+          size:
+            - 10
+            - 2
+        GovernmentForm:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: GovernmentForm
+          order: 12
+          size:
+            - 45
+        HeadOfState:
+          data_type: char
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: HeadOfState
+          order: 13
+          size:
+            - 60
+        IndepYear:
+          data_type: smallint
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: IndepYear
+          order: 6
+          size:
+            - 6
+        LifeExpectancy:
+          data_type: float
+          default_value: NULL
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: LifeExpectancy
+          order: 8
+          size:
+            - 3
+            - 1
+        LocalName:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: LocalName
+          order: 11
+          size:
+            - 45
+        Name:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Name
+          order: 2
+          size:
+            - 52
+        Population:
+          data_type: int
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Population
+          order: 7
+          size:
+            - 11
+        Region:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Region
+          order: 4
+          size:
+            - 26
+        SurfaceArea:
+          data_type: float
+          default_value: 0.00
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: SurfaceArea
+          order: 5
+          size:
+            - 10
+            - 2
+      indices: []
+      name: Country
+      options:
+        - ENGINE: MyISAM
+        - CHARACTER SET: latin1
+      order: 2
+    CountryLanguage:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - CountryCode
+            - Language
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+      fields:
+        CountryCode:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: CountryCode
+          order: 1
+          size:
+            - 3
+        IsOfficial:
+          data_type: enum
+          default_value: F
+          extra:
+            list:
+              - T
+              - F
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: IsOfficial
+          order: 3
+          size:
+            - 1
+        Language:
+          data_type: char
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: Language
+          order: 2
+          size:
+            - 30
+        Percentage:
+          data_type: float
+          default_value: 0.0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: Percentage
+          order: 4
+          size:
+            - 4
+            - 1
+      indices: []
+      name: CountryLanguage
+      options:
+        - ENGINE: MyISAM
+        - CHARACTER SET: latin1
+      order: 3
+  triggers: {}
+  views: {}
+translator:
+  add_drop_table: 0
+  filename: ~
+  no_comments: 0
+  parser_args:
+    db_password: ~
+    db_user: root
+    dsn: dbi:mysql:database=world
+    field_separator: ~
+    ignore_opts: ~
+    mysql_parser_version: ~
+    record_separator: ~
+    scan_fields: 1
+    skip: ~
+    trim_fields: 1
+  parser_type: SQL::Translator::Parser::DBI
+  producer_args:
+    add_prefix: ~
+    add_truncate: ~
+    db_password: ~
+    db_user: ~
+    dsn: ~
+    imap_file: ~
+    imap_url: ~
+    indent: ~
+    mysql_version: ~
+    newlines: ~
+    package_name: ~
+    postgres_version: ~
+    prefix: ~
+    pretty: ~
+    skip: ~
+    skiplike: ~
+    title: ~
+    tt_conf: {}
+    tt_vars: {}
+    ttfile: ~
+  producer_type: SQL::Translator::Producer::YAML
+  show_warnings: 0
+  trace: 0
+  version: 0.09007

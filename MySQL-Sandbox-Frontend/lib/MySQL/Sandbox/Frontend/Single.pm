@@ -56,6 +56,10 @@ sub create {
         no_confirm => 1,
     };
 
+    if ($opts->{sandbox_directory}) {
+	$self->sandbox_directory($opts->{sandbox_directory});
+    }
+
     croak(q|Cannot run make_sandbox command|)
       unless ( can_run('make_sandbox') );
 
@@ -74,10 +78,28 @@ sub create {
     );
 
     unless ($success) {
-        croak($err_code);
+	croak(sprintf("%d : %s", $err_code, join('', @$stderr)));
     }
 
     return $self->parse($stdout);
+}
+
+sub delete {
+    my $self = shift;
+    croak(q|Cannot run sbtool command|) unless ( can_run('sbtool') );
+    my @cmd = ( 'sbtool', '-o', 'delete', '-s', $self->sandbox_abs_directory );
+
+    my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
+        command => \@cmd,
+        verbose => $MySQL::Sandbox::Frontend::DEBUG,
+        timeout => $MySQL::Sandbox::Frontend::TIMEOUT,
+    );
+
+    unless ($success) {
+        croak(sprintf("%d : %s", $err_code, join('', @$stderr)));
+    }
+
+    return $success;
 }
 
 sub parse {
