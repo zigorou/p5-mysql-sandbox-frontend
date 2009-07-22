@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use base qw(Class::Accessor::Fast);
+use base qw(MySQL::Sandbox::Frontend::Base);
 
 __PACKAGE__->mk_accessors(
     qw/
@@ -18,7 +18,6 @@ __PACKAGE__->mk_accessors(
 );
 
 use Carp;
-use Data::Dumper;
 use DBI;
 use File::Spec;
 use MySQL::Sandbox qw(
@@ -29,21 +28,8 @@ use MySQL::Sandbox qw(
 use IPC::Cmd qw(can_run run);
 use Sys::HostIP;
 
+
 use MySQL::Sandbox::Frontend;
-
-sub new {
-    my ( $class, $args ) = @_;
-
-    $args ||= +{};
-    $args = +{
-        upper_directory => File::Spec->catdir( $ENV{HOME}, 'sandboxes' ),
-        db_user         => 'msandbox',
-        db_password     => 'msandbox',
-        %$args,
-    };
-
-    $class->SUPER::new($args);
-}
 
 sub create {
     my ( $self, $version, $opts ) = @_;
@@ -56,8 +42,8 @@ sub create {
         no_confirm => 1,
     };
 
-    if ($opts->{sandbox_directory}) {
-	$self->sandbox_directory($opts->{sandbox_directory});
+    if ( $opts->{sandbox_directory} ) {
+        $self->sandbox_directory( $opts->{sandbox_directory} );
     }
 
     croak(q|Cannot run make_sandbox command|)
@@ -69,7 +55,9 @@ sub create {
         push( @cmd, '--' . $raw_opt );
     }
 
-    push( @cmd, '--sandbox_directory', $self->sandbox_directory ) if ($self->sandbox_directory);
+    push( @cmd, '--sandbox_directory', $self->sandbox_directory )
+      if ( $self->sandbox_directory );
+    push( @cmd, '--verbose' ) if ($MySQL::Sandbox::Frontend::DEBUG);
 
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
@@ -78,10 +66,25 @@ sub create {
     );
 
     unless ($success) {
-	croak(sprintf("%d : %s", $err_code, join('', @$stderr)));
+        croak( sprintf( "%d : %s", $err_code, join( '', @$stderr ) ) );
     }
 
     return $self->parse($stdout);
+
+
+    
+}
+
+sub start {
+}
+
+sub restart {
+}
+
+sub stop {
+}
+
+sub clear {
 }
 
 sub delete {
@@ -96,7 +99,7 @@ sub delete {
     );
 
     unless ($success) {
-        croak(sprintf("%d : %s", $err_code, join('', @$stderr)));
+        croak( sprintf( "%d : %s", $err_code, join( '', @$stderr ) ) );
     }
 
     return $success;
@@ -122,26 +125,27 @@ sub parse {
 }
 
 sub dbh_args {
-    my ($self, $database) = @_;
+    my ( $self, $database ) = @_;
 
     my %dsn = (
-	host => Sys::HostIP->ip,
-	($database) ? (db => $database) : (),
-	port => $self->sandbox_port,
+        host => Sys::HostIP->ip,
+        ($database) ? ( db => $database ) : (),
+        port => $self->sandbox_port,
     );
 
     return +{
-	dsn => 'dbi:mysql:' . join( ';' => map { $_ . '=' . $dsn{$_} } keys %dsn ),
-	user => $self->db_user,
-	password => $self->db_password,
+        dsn => 'dbi:mysql:'
+          . join( ';' => map { $_ . '=' . $dsn{$_} } keys %dsn ),
+        user     => $self->db_user,
+        password => $self->db_password,
     };
 }
 
 sub dbh {
-    my ($self, $database, $args) = @_;
+    my ( $self, $database, $args ) = @_;
     $args ||= +{};
     my $dbh_args = $self->dbh_args($database);
-    my $dbh = DBI->connect(@$dbh_args{qw/dsn user password/}, $args);
+    my $dbh = DBI->connect( @$dbh_args{qw/dsn user password/}, $args );
     return $dbh;
 }
 
@@ -149,7 +153,8 @@ sub sandbox_abs_directory {
     my $self = shift;
 
     if ( -d $self->upper_directory && $self->sandbox_directory ) {
-        return File::Spec->catdir( $self->upper_directory, $self->sandbox_directory );
+        return File::Spec->catdir( $self->upper_directory,
+            $self->sandbox_directory );
     }
     else {
         return "";
@@ -165,10 +170,57 @@ sub is_exists {
 sub is_running {
     my $self = shift;
     my $ret;
-    eval {
-	$ret = is_sandbox_running($self->sandbox_abs_directory);
-    };
+    eval { $ret = is_sandbox_running( $self->sandbox_abs_directory ); };
     $ret ? 1 : 0;
 }
 
+# sub load {
+#     my ($self, $opts) = @_;
+
+#     my $schemas	 = delete $opts->{schemas};
+#     my $fixtures = delete $opts->{fixtures};
+
+#     $self->load_schemas($schemas);
+#     $self->load_fixtures($fixtures);
+# }
+
+# sub load_schemas {
+#     my ($self, $schemas) = @_;
+
+#     my $tr = SQL::Translator->new(
+# 	parser	    => 'YAML',
+# 	producer    => 'MySQL',
+# 	validate    => 1,
+# 	no_comments => 1,
+#     );
+
+#     for my $db (keys %$schemas) {
+# 	my $schema = $tr->translate( filename => $schemas->{$db} );
+# 	my $dbh = $self->dbh(undef, +{ AutoCommit => 0, RaiseError => 1 });
+# 	$dbh->trace(1);
+
+# 	eval {
+# 	    $dbh->do(sprintf("create database %s", $db));
+# 	    $dbh->do(sprintf("use %s", $db));
+# 	    for (grep { $_ !~ /^\s*$/ } split ';' => $schema) {
+# 	    	$dbh->do($_);
+# 	    }
+# 	    $dbh->commit;
+# 	};
+# 	if ($@ || $dbh->errstr) {
+# 	    my $err = $@ || $dbh->errstr;
+# 	    undef $@;
+# 	    $dbh->rollback;
+# 	    croak($err);
+# 	}
+#     }
+# }
+
+# sub load_fixtures {
+#     my ($self, $fixtures) = @_;
+# }
+
 1;
+
+__END__
+
