@@ -7,17 +7,8 @@ our $VERSION = '0.01';
 
 use base qw(MySQL::Sandbox::Frontend::Base);
 
-__PACKAGE__->mk_accessors(
-    qw/
-      upper_directory
-      sandbox_directory
-      sandbox_port
-      db_user
-      db_password
-      /
-);
-
 use Carp;
+use Data::Dumper;
 use DBI;
 use File::Spec;
 use MySQL::Sandbox qw(
@@ -26,9 +17,8 @@ use MySQL::Sandbox qw(
   is_sandbox_running
 );
 use IPC::Cmd qw(can_run run);
+use List::Util qw(first);
 use Sys::HostIP;
-
-
 use MySQL::Sandbox::Frontend;
 
 sub create {
@@ -70,48 +60,16 @@ sub create {
     }
 
     return $self->parse($stdout);
-
-
-    
-}
-
-sub start {
-}
-
-sub restart {
-}
-
-sub stop {
-}
-
-sub clear {
-}
-
-sub delete {
-    my $self = shift;
-    croak(q|Cannot run sbtool command|) unless ( can_run('sbtool') );
-    my @cmd = ( 'sbtool', '-o', 'delete', '-s', $self->sandbox_abs_directory );
-
-    my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
-        command => \@cmd,
-        verbose => $MySQL::Sandbox::Frontend::DEBUG,
-        timeout => $MySQL::Sandbox::Frontend::TIMEOUT,
-    );
-
-    unless ($success) {
-        croak( sprintf( "%d : %s", $err_code, join( '', @$stderr ) ) );
-    }
-
-    return $success;
 }
 
 sub parse {
     my ( $self, $stdout ) = @_;
+
     my $is_installed =
       $stdout->[-1] =~ m|^Your sandbox server was installed in (.*)\n$|;
 
     if ($is_installed) {
-        my $config_text = $stdout->[1];
+        my $config_text = first { m/installing with the following parameters/ } map { $stdout->[$_] } (1, 2);
         my %config = $config_text =~ m|^([\w_]+)\s*=\s*([^=\s]*)\n|mg;
         my @fields =
           qw(db_user db_password upper_directory sandbox_directory sandbox_port);
@@ -149,30 +107,6 @@ sub dbh {
     return $dbh;
 }
 
-sub sandbox_abs_directory {
-    my $self = shift;
-
-    if ( -d $self->upper_directory && $self->sandbox_directory ) {
-        return File::Spec->catdir( $self->upper_directory,
-            $self->sandbox_directory );
-    }
-    else {
-        return "";
-    }
-}
-
-sub is_exists {
-    my $self    = shift;
-    my $abs_dir = $self->sandbox_abs_directory;
-    is_a_sandbox($abs_dir) ? 1 : 0;
-}
-
-sub is_running {
-    my $self = shift;
-    my $ret;
-    eval { $ret = is_sandbox_running( $self->sandbox_abs_directory ); };
-    $ret ? 1 : 0;
-}
 
 # sub load {
 #     my ($self, $opts) = @_;
