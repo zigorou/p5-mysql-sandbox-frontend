@@ -7,6 +7,10 @@ our $VERSION = '0.01';
 
 use base qw(MySQL::Sandbox::Frontend::Base);
 
+__PACKAGE__->cmd_start('start');
+__PACKAGE__->cmd_stop('stop');
+__PACKAGE__->cmd_restart('restart');
+
 use Carp;
 use Data::Dumper;
 use DBI;
@@ -107,6 +111,22 @@ sub dbh {
     return $dbh;
 }
 
+sub base_directory {
+    my $self = shift;
+    $self->sandbox_abs_directory;
+}
+
+sub sandbox_abs_directory {
+    my $self = shift;
+
+    if ( -d $self->upper_directory && $self->sandbox_directory ) {
+        return File::Spec->catdir( $self->upper_directory,
+            $self->sandbox_directory );
+    }
+    else {
+        return "";
+    }
+}
 
 # sub load {
 #     my ($self, $opts) = @_;

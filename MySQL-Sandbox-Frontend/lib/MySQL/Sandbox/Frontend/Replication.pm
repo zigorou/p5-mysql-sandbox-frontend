@@ -7,12 +7,27 @@ our $VERSION = '0.01';
 
 use base qw(MySQL::Sandbox::Frontend::Base);
 
-__PACKAGE__->mk_accessors(qw/replication_directory/);
+__PACKAGE__->cmd_start('start_all');
+__PACKAGE__->cmd_stop('stop_all');
+__PACKAGE__->cmd_restart('restart_all');
+
+__PACKAGE__->mk_accessors(qw/replication_directory nodes/);
 
 use IPC::Cmd qw(can_run run);
+use List::Util qw(first shuffle);
 use MySQL::Sandbox::Frontend;
+use MySQL::Sandbox::Frontend::Single;
 
 use Data::Dumper;
+
+sub new {
+    my ($class, $args) = @_;
+
+    $args ||= +{};
+    $args->{nodes} ||= [];
+
+    $class->SUPER::new($args);
+}
 
 sub create {
     my ( $self, $version, $opts ) = @_;
@@ -40,8 +55,9 @@ sub create {
       if ( $self->sandbox_directory );
     push( @cmd, '--replication_directory', $self->replication_directory )
       if ( $self->replication_directory );
+    push( @cmd, '--how_many_slaves', $opts->{how_many_slaves} );
     
-    push( @cmd, '--verbose' ) if ($MySQL::Sandbox::Frontend::DEBUG);
+    push( @cmd, '--verbose' );
 
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
@@ -49,7 +65,70 @@ sub create {
         timeout => $MySQL::Sandbox::Frontend::TIMEOUT,
     );
 
-    print Dumper($stdout);
+    return $self->parse($opts, $stdout);
+}
+
+sub parse {
+    my ($self, $opts, $stdout) = @_;
+
+    my $node_size = $opts->{how_many_slaves} || 2;
+
+    my $is_installed =
+	$stdout->[-1] =~ m|replication directory installed in (.*)\n$|;
+
+    my @nodes;
+
+    for my $config_text ( map { $stdout->[$_] } 1 .. $node_size + 1 ) {
+	my %config = $config_text =~ m|^([\w_]+)\s*=\s*([^=\s]*)\n|mg;
+
+	my @fields =
+          qw(db_user db_password upper_directory sandbox_directory sandbox_port);
+
+	my $args = +{
+	    map { ($_, $config{$_}) }
+	    qw(db_user db_password upper_directory sandbox_directory sandbox_port),
+	};
+
+	$args->{is_master} = $config{sandbox_directory} eq 'master' ? 1 : 0;
+	$args->{is_slave}  = !$args->{is_master};
+
+	my $node = MySQL::Sandbox::Frontend::Single->new($args);
+
+	push(@nodes, $node);
+    }
+
+    $self->nodes(\@nodes);
+    
+    return $is_installed;
+}
+
+sub master {
+    my $self = shift;
+    return $self->nodes->[0];
+}
+
+sub slave {
+    my $self = shift;
+    my $slave_cnt = scalar(@{$self->nodes}) - 1;
+    return unless ($slave_cnt > 0);
+    $self->nodes->[ (first { $_ } shuffle ( 1 .. $slave_cnt )) ];
+}
+
+sub base_directory {
+    my $self = shift;
+    $self->replication_abs_directory;
+}
+
+sub replication_abs_directory {
+    my $self = shift;
+
+    if ( -d $self->upper_directory && $self->replication_directory ) {
+        return File::Spec->catdir( $self->upper_directory,
+            $self->replication_directory );
+    }
+    else {
+        return "";
+    }
 }
 
 1;

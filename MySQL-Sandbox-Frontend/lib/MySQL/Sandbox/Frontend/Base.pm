@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use base qw(Class::Accessor::Fast);
+use base qw(Class::Accessor::Fast Class::Data::Inheritable);
 
 __PACKAGE__->mk_accessors(
     qw/
@@ -18,6 +18,8 @@ __PACKAGE__->mk_accessors(
       is_slave
       /
 );
+
+__PACKAGE__->mk_classdata($_) for (qw/cmd_start cmd_stop cmd_restart/);
 
 use Carp;
 use File::Spec;
@@ -38,6 +40,8 @@ sub new {
         upper_directory => File::Spec->catdir( $ENV{HOME}, 'sandboxes' ),
         db_user         => 'msandbox',
         db_password     => 'msandbox',
+	is_master       => 1,
+	is_slave        => 0,
         %$args,
     };
 
@@ -50,7 +54,7 @@ sub create {
 sub delete {
     my $self = shift;
     croak(q|Cannot run sbtool command|) unless ( can_run('sbtool') );
-    my @cmd = ( 'sbtool', '-o', 'delete', '-s', $self->sandbox_abs_directory );
+    my @cmd = ( 'sbtool', '-o', 'delete', '-s', $self->base_directory );
 
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
@@ -68,7 +72,7 @@ sub delete {
 sub start {
     my $self = shift;
     return if ($self->is_running);
-    my @cmd = ( $self->sandbox_cmd('start') );
+    my @cmd = ( $self->sandbox_cmd($self->cmd_start) );
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
 	verbose => $MySQL::Sandbox::Frontend::DEBUG,
@@ -80,7 +84,7 @@ sub start {
 
 sub restart {
     my $self = shift;
-    my @cmd = ( $self->sandbox_cmd('restart') );
+    my @cmd = ( $self->sandbox_cmd($self->cmd_restart) );
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
 	verbose => $MySQL::Sandbox::Frontend::DEBUG,
@@ -94,7 +98,7 @@ sub restart {
 sub stop {
     my $self = shift;
     return unless ($self->is_running);
-    my @cmd = ( $self->sandbox_cmd('stop') );
+    my @cmd = ( $self->sandbox_cmd($self->cmd_stop) );
     my ( $success, $err_code, $full_buf, $stdout, $stderr ) = run(
         command => \@cmd,
 	verbose => $MySQL::Sandbox::Frontend::DEBUG,
@@ -107,32 +111,24 @@ sub stop {
 
 sub is_exists {
     my $self    = shift;
-    my $abs_dir = $self->sandbox_abs_directory;
+    my $abs_dir = $self->base_directory;
     is_a_sandbox($abs_dir) ? 1 : 0;
 }
 
 sub is_running {
     my $self = shift;
     my ($ret, $info);
-    eval { ($ret, $info) = is_sandbox_running( $self->sandbox_abs_directory ); };
+    eval { ($ret, $info) = is_sandbox_running( $self->base_directory ); };
     $ret ? 1 : 0;
 }
 
-sub sandbox_abs_directory {
-    my $self = shift;
-
-    if ( -d $self->upper_directory && $self->sandbox_directory ) {
-        return File::Spec->catdir( $self->upper_directory,
-            $self->sandbox_directory );
-    }
-    else {
-        return "";
-    }
+sub base_directory {
+    croak('abstract method');
 }
 
 sub sandbox_cmd {
     my ($self, $cmd) = @_;
-    File::Spec->catfile( $self->sandbox_abs_directory, $cmd );
+    File::Spec->catfile( $self->base_directory, $cmd );
 }
 
 
