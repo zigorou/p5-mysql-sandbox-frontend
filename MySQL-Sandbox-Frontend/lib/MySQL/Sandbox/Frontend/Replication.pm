@@ -16,9 +16,9 @@ __PACKAGE__->mk_accessors(qw/replication_directory nodes/);
 use IPC::Cmd qw(can_run run);
 use List::Util qw(first shuffle);
 use MySQL::Sandbox::Frontend;
-use MySQL::Sandbox::Frontend::Single;
+use MySQL::Sandbox::Frontend::Node;
 
-use Data::Dumper;
+our $DEFAULT_SLAVES = 2;
 
 sub new {
     my ($class, $args) = @_;
@@ -34,16 +34,14 @@ sub create {
 
     $opts ||= +{};
     $opts = +{
-	how_many_slaves => 2,
+	how_many_slaves => $DEFAULT_SLAVES,
 	%$opts,
     };
 
+    $opts->{replication_directory} = delete $opts->{name} if (exists $opts->{name} && $opts->{name});
+
     if ($opts->{replication_directory}) {
 	$self->replication_directory($opts->{replication_directory});
-    }
-    
-    if ( $opts->{sandbox_directory} ) {
-	$self->sandbox_directory( $opts->{sandbox_directory} );
     }
 
     croak(q|Cannot run make_replication_sandbox|)
@@ -71,7 +69,7 @@ sub create {
 sub parse {
     my ($self, $opts, $stdout) = @_;
 
-    my $node_size = $opts->{how_many_slaves} || 2;
+    my $node_size = $opts->{how_many_slaves};
 
     my $is_installed =
 	$stdout->[-1] =~ m|replication directory installed in (.*)\n$|;
@@ -92,7 +90,7 @@ sub parse {
 	$args->{is_master} = $config{sandbox_directory} eq 'master' ? 1 : 0;
 	$args->{is_slave}  = !$args->{is_master};
 
-	my $node = MySQL::Sandbox::Frontend::Single->new($args);
+	my $node = MySQL::Sandbox::Frontend::Node->new($args);
 
 	push(@nodes, $node);
     }

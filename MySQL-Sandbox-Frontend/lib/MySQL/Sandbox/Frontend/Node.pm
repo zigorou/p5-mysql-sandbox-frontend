@@ -1,4 +1,4 @@
-package MySQL::Sandbox::Frontend::Single;
+package MySQL::Sandbox::Frontend::Node;
 
 use strict;
 use warnings;
@@ -36,6 +36,8 @@ sub create {
         no_confirm => 1,
     };
 
+    $opts->{sandbox_directory} = delete $opts->{name} if (exists $opts->{name} && $opts->{name});
+    
     if ( $opts->{sandbox_directory} ) {
         $self->sandbox_directory( $opts->{sandbox_directory} );
     }

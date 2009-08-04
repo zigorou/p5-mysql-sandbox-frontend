@@ -9,47 +9,38 @@ our $DEBUG   = 0;
 our $TIMEOUT = 50;
 
 use Carp;
-use Data::Dumper;
-use MySQL::Sandbox qw(
-    is_a_sandbox
-    get_sandbox_params
-    is_sandbox_running
+
+use MySQL::Sandbox::Frontend::Node;
+use MySQL::Sandbox::Frontend::Replication;
+
+our %TYPE_TO_MODULES = (
+    single	=> 'Node',
+    replication => 'Replication',
 );
-use IPC::Cmd qw(can_run run);
 
-sub make_sandbox {
-    my ($class, $version, $args) = @_;
-
-    $args ||= +{};
-    $args = +{
-	force => 0,
-	check_port => 1,
-	%$args,
-	no_confirm => 1,
+#
+# MySQL::Sandbox::Frontend->create('replication', 'rtest', '5.1.36', +{ how_many_slaves => 2 })
+# 
+sub create {
+    my ($class, $type, $name, $version, $opts) = @_;
+    
+    croak("No support type: " . $type) unless (exists $TYPE_TO_MODULES{$type});
+    
+    $opts ||= +{};
+    $opts = +{
+	name => $name,
+	new_args => +{},
+	debug => 0,
+	%$opts,
     };
 
-    croak(q|Cannot run make_sandbox command|) unless(can_run('make_sandbox'));
+    my $creator  = __PACKAGE__ . '::' . $TYPE_TO_MODULES{$type};
+    my $frontend = $creator->new($opts->{new_args});
 
-    my @cmd = ('make_sandbox', $version);
-    
-    for my $raw_opt (grep { $args->{$_} } qw/force check_port no_confirm/) {
-	push(@cmd, '--' . $raw_opt);
-    }
+    $DEBUG = $opts->{debug};
 
-    my ($success, $err_code, $full_buf, $stdout, $stderr)
-	= run( command => \@cmd, verbose => $DEBUG, timeout => 40 );
-
-    unless ($success) {
-	croak($err_code);
-    }
-
-    print Dumper($stdout);
-}
-
-sub make_replication_sandbox {
-}
-
-sub make_multiple_sandbox {
+    $frontend->create($version, $opts);
+    $frontend;
 }
 
 1;
