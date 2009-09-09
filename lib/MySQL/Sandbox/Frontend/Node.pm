@@ -130,52 +130,6 @@ sub sandbox_abs_directory {
     }
 }
 
-# sub load {
-#     my ($self, $opts) = @_;
-
-#     my $schemas	 = delete $opts->{schemas};
-#     my $fixtures = delete $opts->{fixtures};
-
-#     $self->load_schemas($schemas);
-#     $self->load_fixtures($fixtures);
-# }
-
-# sub load_schemas {
-#     my ($self, $schemas) = @_;
-
-#     my $tr = SQL::Translator->new(
-# 	parser	    => 'YAML',
-# 	producer    => 'MySQL',
-# 	validate    => 1,
-# 	no_comments => 1,
-#     );
-
-#     for my $db (keys %$schemas) {
-# 	my $schema = $tr->translate( filename => $schemas->{$db} );
-# 	my $dbh = $self->dbh(undef, +{ AutoCommit => 0, RaiseError => 1 });
-# 	$dbh->trace(1);
-
-# 	eval {
-# 	    $dbh->do(sprintf("create database %s", $db));
-# 	    $dbh->do(sprintf("use %s", $db));
-# 	    for (grep { $_ !~ /^\s*$/ } split ';' => $schema) {
-# 	    	$dbh->do($_);
-# 	    }
-# 	    $dbh->commit;
-# 	};
-# 	if ($@ || $dbh->errstr) {
-# 	    my $err = $@ || $dbh->errstr;
-# 	    undef $@;
-# 	    $dbh->rollback;
-# 	    croak($err);
-# 	}
-#     }
-# }
-
-# sub load_fixtures {
-#     my ($self, $fixtures) = @_;
-# }
-
 1;
 
 __END__
